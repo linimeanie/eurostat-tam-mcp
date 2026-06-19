@@ -42,12 +42,26 @@ SME_BANDS = ["0-9", "10-19", "20-49", "50-249"]   # 1-249 persons employed
 SME_BANDS_NO_MICRO = ["10-19", "20-49", "50-249"]  # excludes micro (0-9)
 CORP_BAND = "GE250"                                 # 250 or more
 
-mcp = FastMCP("eurostat-tam")
-
 # When served remotely over HTTP (the web connector), the host has no access to
 # the user's local files, so the sheet-filling tool is not exposed there.
 import os as _os
 _IS_HTTP = _os.environ.get("MCP_TRANSPORT", "stdio").lower() in ("http", "streamable-http")
+
+if _IS_HTTP:
+    # The SDK's DNS-rebinding protection only allows Host: localhost by default,
+    # so any real domain (e.g. *.onrender.com) gets HTTP 421. That protection
+    # guards localhost-bound servers from malicious browsers; it's irrelevant
+    # for a public server that returns only public Eurostat data, so disable it.
+    from mcp.server.transport_security import TransportSecuritySettings
+
+    mcp = FastMCP(
+        "eurostat-tam",
+        transport_security=TransportSecuritySettings(
+            enable_dns_rebinding_protection=False
+        ),
+    )
+else:
+    mcp = FastMCP("eurostat-tam")
 
 
 # --------------------------------------------------------------------------- #
