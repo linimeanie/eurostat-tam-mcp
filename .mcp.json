@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "eurostat-tam": {
+      "command": "/Users/lini/.local/bin/uv",
+      "args": [
+        "run",
+        "--directory",
+        "/Users/lini/Documents/Claude/eurostat-mcp",
+        "server.py"
+      ]
+    }
+  }
+}

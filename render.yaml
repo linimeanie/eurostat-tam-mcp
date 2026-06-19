@@ -1,0 +1,15 @@
+# Render Blueprint. On render.com: New + -> Blueprint -> pick this repo.
+# Render auto-creates the service from this file and injects $PORT, which
+# server.py reads. The MCP endpoint will be  https://<service>.onrender.com/mcp
+services:
+  - type: web
+    name: eurostat-tam-mcp
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: MCP_TRANSPORT
+        value: http
+      - key: PYTHON_VERSION
+        value: "3.12.6"
