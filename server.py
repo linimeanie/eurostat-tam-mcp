@@ -305,6 +305,35 @@ def fill_tam_sheet(
         input_path, out, geo, year, exclude_micro)}
 
 
+@mcp.tool()
+def get_company_count(
+    naics: list[str],
+    countries: list[str],
+    employee_min: int | None = None,
+    employee_max: int | None = None,
+) -> dict[str, Any]:
+    """
+    Count companies in Cognism matching NAICS codes x countries x employee range.
+    Fills the cells Eurostat/Nomis can't:
+      - Corp Large 5,000+      -> employee_min=5000
+      - Corp Mid-cap 250-4,999 -> employee_min=250, employee_max=4999
+      - UK corporates          -> countries=["United Kingdom"]
+
+    Args:
+        naics: NAICS codes, e.g. ["3344"] (semiconductors). Cognism uses NAICS,
+            not NACE — map your NACE codes first.
+        countries: country names, e.g. ["Germany", "France"] or ["United Kingdom"].
+        employee_min / employee_max: employee-count band bounds (inclusive).
+
+    Requires the Cognism API entitlement to be enabled by your CSM; until then
+    this returns error "no_entitlement". Reads the token from the
+    COGNISM_API_TOKEN env var (Render) or the local .env.cognism file (desktop).
+    """
+    import cognism  # lazy import
+
+    return cognism.get_company_count(naics, countries, employee_min, employee_max)
+
+
 # Local-file tool: register only for stdio (desktop/CLI), not the web connector.
 if not _IS_HTTP:
     fill_tam_sheet = mcp.tool()(fill_tam_sheet)
