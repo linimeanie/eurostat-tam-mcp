@@ -68,7 +68,8 @@ def _build_query(naics: list[str], countries: list[str],
         filters["countries"] = countries
     if employees:
         filters["employeeCount"] = employees
-    return {"filters": filters, "size": size}
+    # Cognism expects `size` as a pagination object {from, size}, not a bare int.
+    return {"filters": filters, "size": {"from": 0, "size": size}}
 
 
 # --------------------------------------------------------------------------- #
@@ -122,9 +123,12 @@ def get_company_count(naics: list[str], countries: list[str],
     body = _build_query(naics, countries, emp_min, emp_max, size=1)
     status, payload = _post(body, token)
 
-    if status == 403 and isinstance(payload, str) and "entitlement" in payload.lower():
-        return {"ok": False, "error": "no_entitlement", "request_sent": body,
-                "detail": "Cognism: no API entitlement set — contact your CSM to enable it."}
+    if "entitlement" in str(payload).lower():
+        return {"ok": False, "error": "entitlement_scope", "request_sent": body,
+                "detail": ("Cognism rejected this search on entitlement grounds. If it says "
+                           "'not supported by subscribed entitlement', your plan likely has "
+                           "CONTACT search but not ACCOUNT (company) search — ask your CSM to "
+                           "enable Account Search."), "raw": payload}
     if status != 200:
         return {"ok": False, "error": f"http_{status}", "request_sent": body,
                 "detail": payload}
