@@ -334,6 +334,42 @@ def get_company_count(
     return cognism.get_company_count(naics, countries, employee_min, employee_max)
 
 
+@mcp.tool()
+def get_startup_scaleup_counts(
+    industry_tags: list[str] | None = None,
+    technology_tags: list[str] | None = None,
+    region: str = "EUROPE",
+    split_at: int = 30_000_000,
+    exclude_business_tags: list[str] | None = None,
+) -> dict[str, Any]:
+    """
+    Count Startups and Scaleups for one value-chain segment via Harmonic, split
+    on funding raised (TAM sheet columns D and E).
+
+    Startup = raised <= split_at; Scaleup = raised > split_at and < 5,000 staff.
+
+    Args:
+        industry_tags: Harmonic industry tags for the segment, e.g.
+            ["Aerospace Technology"], ["Defense Technology & Services"],
+            ["Advanced Manufacturing & Robotics"], ["Hardware & Semiconductors"].
+        technology_tags: optional Harmonic technology tags, e.g.
+            ["Hardware", "Robotics", "Sensors", "Manufacturing"].
+        region: Harmonic region, default "EUROPE".
+        split_at: Startup/Scaleup funding boundary. Default 30,000,000.
+            NOTE: Harmonic funding is ~USD; EUR 30M ~= USD 32-33M — set accordingly.
+        exclude_business_tags: e.g. ["Consumer (B2C)"] to drop B2C.
+
+    Requires HARMONIC_API_KEY (env on Render, .env.harmonic on desktop).
+    Returns exact counts; Harmonic's tags are coarser than the sheet's segments,
+    so use clean-tag segments precisely and allocate the rest from market totals.
+    """
+    import harmonic  # lazy import
+
+    return harmonic.startup_scaleup_split(
+        industry_tags=industry_tags, technology_tags=technology_tags,
+        region=region, split_at=split_at, exclude_business_tags=exclude_business_tags)
+
+
 # Local-file tool: register only for stdio (desktop/CLI), not the web connector.
 if not _IS_HTTP:
     fill_tam_sheet = mcp.tool()(fill_tam_sheet)
